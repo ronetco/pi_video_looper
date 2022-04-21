@@ -1,21 +1,23 @@
 #!/bin/bash
 
-# Make sure script is run as root.
-if [ "$(id -u)" != "0" ]; then
-  echo "Must be run as root with sudo! Try: sudo ./install.sh"
-  exit 1
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+# Error out if anything fails.
+set -e
+
+# Extra steps for DietPi installations
+if id "pi" >/dev/null 2>&1; then
+	echo "pi user exists"
+else
+    echo "Creating pi user"
+	sudo useradd -m -u 1000 -G adm,audio,video,sudo,adm pi
+	sudo mkdir -p /run/user/1000
+	sudo chmod 700 /run/user/1000
 fi
 
-# change the directoy to the script location
-cd "$(dirname "$0")"
-
-# Basic system prep
 echo "Installing dependencies..."
 echo "=========================="
-apt update && apt -y install python3 python3-pip python3-pygame supervisor ntfs-3g exfat-fuse vlc
-
-mkdir -p /mnt/usbdrive0 # This is very important if you put your system in readonly after
-mkdir -p /home/pi/video # create default video directory
+sudo apt update && sudo apt -y install python3 python3-pip python3-pygame supervisor ntfs-3g exfat-fuse vlc
 
 # Determine OS and run legacy installer
 if [ "$(grep '^VERSION_ID=' /etc/os-release | grep -ioP '[[:digit:]]+')" -gt 10 ]; then
@@ -88,13 +90,22 @@ fi
 
 echo "Installing video_looper program..."
 echo "=================================="
-pip3 install setuptools
-python3 setup.py install --force
+
+sudo mkdir -p /mnt/usbdrive0 # This is very important if you put your system in readonly after
+sudo mkdir -p /home/pi/video # create default video directory
+sudo chown pi:root /home/pi/video
+
+sudo -u pi /usr/bin/python3 -m pip install --user --upgrade pip
+sudo -u pi /usr/bin/python3 -m pip install --user $SCRIPT_DIR
 
 echo "Configuring video_looper to run on start..."
 echo "==========================================="
 
-cp ./assets/video_looper.conf /etc/supervisor/conf.d/
+sudo cp $SCRIPT_DIR/assets/video_looper.service /etc/systemd/system/video_looper.service
+sudo chmod 644 /etc/systemd/system/video_looper.service
+
+sudo systemctl daemon-reload
+sudo systemctl enable video_looper
 
 if [ $PROMPT_FOR_REBOOT -eq 1 ]; then
   echo
@@ -110,7 +121,7 @@ if [ $PROMPT_FOR_REBOOT -eq 1 ]; then
   fi
 else
   # No reboot needed; can (re)start looper with current DTO config
-  service supervisor restart
+  sudo systemctl start video_looper
 fi
 
 echo "Finished!"
