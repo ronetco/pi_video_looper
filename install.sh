@@ -20,7 +20,7 @@ fi
 
 echo "Installing dependencies..."
 echo "=========================="
-apt update && apt -y install python3 python3-pip python3-pygame supervisor ntfs-3g exfat-fuse vlc
+apt update && apt -y install python3 python3-pip python3-pygame ntfs-3g exfat-fuse vlc
 
 # Determine OS and run legacy installer
 if [ "$(grep '^VERSION_ID=' /etc/os-release | grep -ioP '[[:digit:]]+')" -gt 10 ]; then
