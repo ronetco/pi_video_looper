@@ -2,9 +2,6 @@
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
-# Error out if anything fails.
-set -e
-
 # Extra steps for DietPi installations
 if id "pi" >/dev/null 2>&1; then
 	echo "pi user exists"
