@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# Make sure script is run as root.
+if [ "$(id -u)" != "0" ]; then
+  echo "Must be run as root with sudo! Try: sudo ./install.sh"
+  exit 1
+fi
+
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 # Extra steps for DietPi installations
@@ -7,14 +13,14 @@ if id "pi" >/dev/null 2>&1; then
 	echo "pi user exists"
 else
     echo "Creating pi user"
-	sudo useradd -m -u 1000 -G adm,audio,video,sudo,adm pi
-	sudo mkdir -p /run/user/1000
-	sudo chmod 700 /run/user/1000
+	useradd -m -u 1000 -G adm,audio,video,sudo,adm pi
+	mkdir -p /run/user/1000
+	chmod 700 /run/user/1000
 fi
 
 echo "Installing dependencies..."
 echo "=========================="
-sudo apt update && sudo apt -y install python3 python3-pip python3-pygame supervisor ntfs-3g exfat-fuse vlc
+apt update && apt -y install python3 python3-pip python3-pygame supervisor ntfs-3g exfat-fuse vlc
 
 # Determine OS and run legacy installer
 if [ "$(grep '^VERSION_ID=' /etc/os-release | grep -ioP '[[:digit:]]+')" -gt 10 ]; then
@@ -39,10 +45,10 @@ if [ "$(grep '^VERSION_ID=' /etc/os-release | grep -ioP '[[:digit:]]+')" -gt 10 
     if [ $? -eq 0 ]; then
       # It IS present. Comment out that line, and insert the 'fkms' item
       # on the next line.
-      sudo sed -i "s/^dtoverlay=vc4-kms-v3d/#&\ndtoverlay=vc4-fkms-v3d/g" /boot/config.txt >/dev/null
+      sed -i "s/^dtoverlay=vc4-kms-v3d/#&\ndtoverlay=vc4-fkms-v3d/g" /boot/config.txt >/dev/null
     else
       # It's NOT present. Silently append 'fkms' overlay to end of file.
-      echo dtoverlay=vc4-fkms-v3d | sudo tee -a /boot/config.txt >/dev/null
+      echo dtoverlay=vc4-fkms-v3d | tee -a /boot/config.txt >/dev/null
     fi
     # Any change or addition of overlay will require a reboot when done.
     PROMPT_FOR_REBOOT=1
@@ -50,7 +56,7 @@ if [ "$(grep '^VERSION_ID=' /etc/os-release | grep -ioP '[[:digit:]]+')" -gt 10 
 
   echo "Copying config..."
   echo "=========================="
-  sudo cp ./assets/video_looper.ini /boot/video_looper.ini
+  cp ./assets/video_looper.ini /boot/video_looper.ini
 
 else
 
@@ -66,12 +72,12 @@ else
   then
     echo "Installing hello_video..."
     echo "========================="
-    sudo apt -y install git build-essential python3-dev
+    apt -y install git build-essential python3-dev
     git clone https://github.com/adafruit/pi_hello_video
     cd pi_hello_video
     ./rebuild.sh
     cd hello_video
-    sudo make install
+    make install
     cd ../..
     rm -rf pi_hello_video
   else
@@ -81,28 +87,31 @@ else
 
   echo "Copying config..."
   echo "=========================="
-  sudo cp ./assets/video_looper_legacy.ini /boot/video_looper.ini
+  cp ./assets/video_looper_legacy.ini /boot/video_looper.ini
 
 fi
 
 echo "Installing video_looper program..."
 echo "=================================="
 
-sudo mkdir -p /mnt/usbdrive0 # This is very important if you put your system in readonly after
-sudo mkdir -p /home/pi/video # create default video directory
-sudo chown pi:root /home/pi/video
+mkdir -p /mnt/usbdrive0 # This is very important if you put your system in readonly after
+mkdir -p /home/pi/video # create default video directory
+chown pi:root /home/pi/video
 
-sudo -u pi /usr/bin/python3 -m pip install --user --upgrade pip
-sudo -u pi /usr/bin/python3 -m pip install --user $SCRIPT_DIR
+/usr/bin/python3 -m pip install --upgrade pip
+/usr/bin/python3 -m pip install $SCRIPT_DIR
 
 echo "Configuring video_looper to run on start..."
 echo "==========================================="
 
-sudo cp $SCRIPT_DIR/assets/video_looper.service /etc/systemd/system/video_looper.service
-sudo chmod 644 /etc/systemd/system/video_looper.service
+cp $SCRIPT_DIR/assets/video_looper.service /etc/systemd/system/video_looper.service
+chmod 644 /etc/systemd/system/video_looper.service
 
-sudo systemctl daemon-reload
-sudo systemctl enable video_looper
+cp $SCRIPT_DIR/assets/launch_video_looper /usr/local/bin/launch_video_looper
+chmod 755 /usr/local/bin/launch_video_looper
+
+systemctl daemon-reload
+systemctl enable video_looper
 
 if [ $PROMPT_FOR_REBOOT -eq 1 ]; then
   echo
@@ -114,11 +123,11 @@ if [ $PROMPT_FOR_REBOOT -eq 1 ]; then
     echo "Exiting without reboot."
   else
     echo "Reboot started..."
-    sudo reboot
+    reboot
   fi
 else
   # No reboot needed; can (re)start looper with current DTO config
-  sudo systemctl start video_looper
+  systemctl start video_looper
 fi
 
 echo "Finished!"

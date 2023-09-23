@@ -455,7 +455,7 @@ class VideoLooper:
             self._player.stop()
         pygame.quit()
         if shutdown:
-            os.system("sudo shutdown now")
+            os.system("shutdown now")
         self._running = False
         
     def signal_quit(self, signal, frame):
