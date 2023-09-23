@@ -42,7 +42,7 @@ if [ "$(grep '^VERSION_ID=' /etc/os-release | grep -ioP '[[:digit:]]+')" -gt 10 
     if [ $? -eq 0 ]; then
       # It IS present. Comment out that line, and insert the 'fkms' item
       # on the next line.
-      sed -i "s/^dtoverlay=vc4-kms-v3d/#&\ndtoverlay=vc4-fkms-v3d/g" /boot/config.txt >/dev/null
+      sudo sed -i "s/^dtoverlay=vc4-kms-v3d/#&\ndtoverlay=vc4-fkms-v3d/g" /boot/config.txt >/dev/null
     else
       # It's NOT present. Silently append 'fkms' overlay to end of file.
       echo dtoverlay=vc4-fkms-v3d | sudo tee -a /boot/config.txt >/dev/null
@@ -53,7 +53,7 @@ if [ "$(grep '^VERSION_ID=' /etc/os-release | grep -ioP '[[:digit:]]+')" -gt 10 
 
   echo "Copying config..."
   echo "=========================="
-  cp ./assets/video_looper.ini /boot/video_looper.ini
+  sudo cp ./assets/video_looper.ini /boot/video_looper.ini
 
 else
 
@@ -69,12 +69,12 @@ else
   then
     echo "Installing hello_video..."
     echo "========================="
-    apt -y install git build-essential python3-dev
+    sudo apt -y install git build-essential python3-dev
     git clone https://github.com/adafruit/pi_hello_video
     cd pi_hello_video
     ./rebuild.sh
     cd hello_video
-    make install
+    sudo make install
     cd ../..
     rm -rf pi_hello_video
   else
@@ -84,7 +84,7 @@ else
 
   echo "Copying config..."
   echo "=========================="
-  cp ./assets/video_looper_legacy.ini /boot/video_looper.ini
+  sudo cp ./assets/video_looper_legacy.ini /boot/video_looper.ini
 
 fi
 
