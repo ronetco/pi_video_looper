@@ -114,7 +114,7 @@ if [ $PROMPT_FOR_REBOOT -eq 1 ]; then
     echo "Exiting without reboot."
   else
     echo "Reboot started..."
-    reboot
+    sudo reboot
   fi
 else
   # No reboot needed; can (re)start looper with current DTO config
