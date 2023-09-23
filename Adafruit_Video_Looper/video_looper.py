@@ -17,6 +17,7 @@ from datetime import datetime
 from .alsa_config import parse_hw_device
 from .model import Playlist, Movie
 from .playlist_builders import build_playlist_m3u
+from .remote_interface import RemoteInterface
 
 
 # Basic video looper architecure:
@@ -466,6 +467,21 @@ class VideoLooper:
     def signal_hang(self, signal, frame):
         pass
 
+    def skip_video(self):
+        self._print("Skipping video...")
+        self._player.stop(3)
+
+    def pauseplay_video(self):
+      if self._playbackStopped:
+        self._print("Starting playback...")
+        self._playbackStopped = False
+      else:
+        self._print("Stopping playback...")
+        self._playbackStopped = True
+        self._player.stop(3)
+
+    def get_playback_status(self):
+        return not self._playbackStopped
 
 # Main entry point.
 if __name__ == '__main__':
@@ -481,5 +497,9 @@ if __name__ == '__main__':
     signal.signal(signal.SIGTERM, videolooper.signal_quit)
     signal.signal(signal.SIGINT, videolooper.signal_quit)
     signal.signal(signal.SIGHUP, videolooper.signal_hang)
+
+    RemoteInterface.videolooper = videolooper
+    remote_interface_thread = threading.Thread(target=RemoteInterface, daemon=True)
+    remote_interface_thread.start()
     # Run the main loop.
     videolooper.run()
